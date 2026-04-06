@@ -189,6 +189,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(null);
   const [apiResults, setApiResults] = useState(null);
+  const [twoFACode, setTwoFACode] = useState("");
   const [allRecipes, setAllRecipes] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -380,7 +381,53 @@ export default function Home() {
           </div>
         </section>
 
-        {/* API Buttons */}
+        {/* Security & Compliance */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="font-semibold text-slate-800 mb-2">Security Status</p>
+            <p className="text-slate-500">Encryption: <span className="text-green-600 font-medium">Enabled</span></p>
+            <p className="text-slate-500">Access Control: <span className="text-green-600 font-medium">Secure</span></p>
+            <p className="text-slate-500">Compliance: <span className="text-green-600 font-medium">GDPR Compliant</span></p>
+          </div>
+        </section>
+
+        {/* OAuth & 2FA Integration */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">OAuth &amp; 2FA Integration</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="font-semibold text-slate-800 mb-3">Secure Login</p>
+            <div className="flex gap-3 mb-4">
+              <button className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer transition-colors">
+                Login with Google
+              </button>
+              <button className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold cursor-pointer transition-colors">
+                Login with GitHub
+              </button>
+            </div>
+            <label className="block text-xs text-slate-500 mb-1">Enter 2FA Code</label>
+            <input
+              type="text"
+              value={twoFACode}
+              onChange={e => setTwoFACode(e.target.value)}
+              placeholder="Enter your 2FA code"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </section>
+
+        {/* Cloud Resource Cleanup */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Cloud Resource Cleanup</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="text-blue-500 text-xs mb-3">Ensure that cloud resources are efficiently managed and cleaned up post-deployment.</p>
+            <button className="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white text-sm font-semibold cursor-pointer transition-colors">
+              Clean Up Resources
+            </button>
+          </div>
+        </section>
+
+{/* API Buttons */}
         <section className="mb-8">
           <h2 className="text-xl font-bold text-slate-800 mb-4">API Data Interaction</h2>
           <div className="flex gap-3">
@@ -418,6 +465,34 @@ export default function Home() {
               </p>
               {apiResults.error ? (
                 <p className="text-red-500">{apiResults.error}</p>
+              ) : (apiResults.endpoint === "recipes" || apiResults.endpoint === "clusters") && Array.isArray(apiResults.data) ? (
+                <div className="flex flex-col gap-2">
+                  {apiResults.data.map((recipe, i) => (
+                    <div key={i} className="border border-slate-200 rounded-lg px-4 py-3 bg-slate-100 ">
+                      <p className="font-semibold text-slate-800 text-sm">{recipe.recipe}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
+                        {recipe.diet && <span>Diet: <span className="text-slate-700">{recipe.diet}</span></span>}
+                        {recipe.protein != null && <span>Protein: <span className="text-slate-700">{recipe.protein}g</span></span>}
+                        {recipe.carbs != null && <span>Carbs: <span className="text-slate-700">{recipe.carbs}g</span></span>}
+                        {recipe.fat != null && <span>Fat: <span className="text-slate-700">{recipe.fat}g</span></span>}
+                        {recipe.cluster != null && <span>Cluster: <span className="text-slate-700">{recipe.cluster}</span></span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : apiResults.endpoint === "insights" && Array.isArray(apiResults.data) ? (
+                <div className="flex flex-col gap-2">
+                  {apiResults.data.map((item, i) => (
+                    <div key={i} className="border border-slate-200 rounded-lg px-4 py-3 bg-slate-100">
+                      <p className="font-semibold text-slate-800 text-sm capitalize">{item.diet}</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
+                        {item.protein != null && <span>Avg Protein: <span className="text-slate-700">{item.protein.toFixed(2)}g</span></span>}
+                        {item.carbs != null && <span>Avg Carbs: <span className="text-slate-700">{item.carbs.toFixed(2)}g</span></span>}
+                        {item.fat != null && <span>Avg Fat: <span className="text-slate-700">{item.fat.toFixed(2)}g</span></span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <pre className="text-xs font-mono whitespace-pre-wrap break-words">
                   {JSON.stringify(apiResults.data, null, 2)}
@@ -426,7 +501,7 @@ export default function Home() {
             </div>
           )}
         </section>
-
+        
         {/* Pagination */}
         <section>
           <h2 className="text-xl font-bold text-slate-800 mb-4">Pagination</h2>
