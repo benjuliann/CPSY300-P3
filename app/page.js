@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";// signIn Function Import
+import { signIn, signOut, useSession } from "next-auth/react";// signIn Function Import
 import { useState, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer,
@@ -192,6 +192,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState("");
   const [twoFAResult, setTwoFAResult] = useState("");
   // OAuth login handler (local API route simulating OAuth flow)
+  const { data: session, status } = useSession();
   // const handleOAuthLogin = async (provider) => {
   //   setAuthLoading(provider);
   //   setAuthMessage("");
@@ -476,52 +477,90 @@ export default function Home() {
 
         {/* OAuth & 2FA Integration */}
         <section className="mb-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">OAuth &amp; 2FA Integration</h2>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
-            <p className="font-semibold text-slate-800 mb-3">Secure Login</p>
+  <h2 className="text-xl font-bold text-slate-800 mb-4">
+    OAuth &amp; 2FA Integration
+  </h2>
 
+  <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+    <p className="font-semibold text-slate-800 mb-3">Secure Login</p>
+
+    {/* LOGIN STATE */}
+    {status === "loading" && (
+      <p className="text-slate-500 mb-3">Checking session...</p>
+    )}
+
+    {session ? (
+      <div className="mb-4">
+              <p className="text-green-600 font-medium mb-2">
+                ✅ Currently Logged In
+              </p>
+
+              <p className="text-xs text-slate-500 mb-3">
+                {session.user?.email}
+              </p>
+
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white text-sm font-semibold"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
             <div className="flex gap-3 mb-4">
               <button
-                onClick={() => handleOAuthLogin("google")}
-                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer transition-colors"
+                onClick={() => signIn("google")}
+                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
               >
-                {authLoading === "google" ? "Connecting..." : "Login with Google"}
+                Login with Google
               </button>
 
+              {/* OPTIONAL: remove if GitHub not configured */}
               <button
-                onClick={() => handleOAuthLogin("github")}
-                className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold cursor-pointer transition-colors"
+                onClick={() => signIn("github")}
+                className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold"
               >
-                {authLoading === "github" ? "Connecting..." : "Login with GitHub"}
+                Login with GitHub
               </button>
             </div>
+          )}
 
-            {authMessage && (
-              <p className="text-sm text-green-600 mb-4 font-medium">{authMessage}</p>
-            )}
+          {/* OLD MESSAGE (optional keep/remove) */}
+          {authMessage && (
+            <p className="text-sm text-green-600 mb-4 font-medium">
+              {authMessage}
+            </p>
+          )}
 
-            <label className="block text-xs text-slate-500 mb-1">Enter 2FA Code</label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={twoFACode}
-                onChange={e => setTwoFACode(e.target.value)}
-                placeholder="Enter your 2FA code"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                onClick={handleVerify2FA}
-                className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold cursor-pointer transition-colors"
-              >
-                Verify
-              </button>
-            </div>
+          {/* 2FA SECTION (leave as-is for now) */}
+          <label className="block text-xs text-slate-500 mb-1">
+            Enter 2FA Code
+          </label>
 
-            {twoFAResult && (
-              <p className="text-sm text-blue-600 mt-3 font-medium">{twoFAResult}</p>
-            )}
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={twoFACode}
+              onChange={(e) => setTwoFACode(e.target.value)}
+              placeholder="Enter your 2FA code"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+            />
+
+            <button
+              onClick={handleVerify2FA}
+              className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold"
+            >
+              Verify
+            </button>
           </div>
-        </section>
+
+          {twoFAResult && (
+            <p className="text-sm text-blue-600 mt-3 font-medium">
+              {twoFAResult}
+            </p>
+          )}
+        </div>
+      </section>
 
         {/* Cloud Resource Cleanup */}
         <section className="mb-8">
