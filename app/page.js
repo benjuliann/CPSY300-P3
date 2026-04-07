@@ -192,32 +192,32 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState("");
   const [twoFAResult, setTwoFAResult] = useState("");
   // OAuth login handler (local API route simulating OAuth flow)
-  const handleOAuthLogin = async (provider) => {
-    setAuthLoading(provider);
-    setAuthMessage("");
-
-    try {
-      const res = await fetch(`/api/auth-local/${provider}`);
-      const data = await res.json();
-      setAuthMessage(data.message);
-    } catch (error) {
-      console.error(`Failed to login with ${provider}:`, error);
-      setAuthMessage(`Failed to login with ${provider}.`);
-    } finally {
-      setAuthLoading("");
-    }
-  };
-  // // auth external API (google and github) login handler
   // const handleOAuthLogin = async (provider) => {
+  //   setAuthLoading(provider);
+  //   setAuthMessage("");
+
   //   try {
-  //     await signIn(provider, {
-  //       callbackUrl: "/",
-  //     });
+  //     const res = await fetch(`/api/auth-local/${provider}`);
+  //     const data = await res.json();
+  //     setAuthMessage(data.message);
   //   } catch (error) {
   //     console.error(`Failed to login with ${provider}:`, error);
   //     setAuthMessage(`Failed to login with ${provider}.`);
+  //   } finally {
+  //     setAuthLoading("");
   //   }
   // };
+  // // auth external API (google and github) login handler
+  const handleOAuthLogin = async (provider) => {
+    try {
+      await signIn(provider, {
+        callbackUrl: "/",
+      });
+    } catch (error) {
+      console.error(`Failed to login with ${provider}:`, error);
+      setAuthMessage(`Failed to login with ${provider}.`);
+    }
+  };
   // 2fa verification handler (local API route simulating 2FA verification)
   const handleVerify2FA = async () => {
     setTwoFAResult("");
