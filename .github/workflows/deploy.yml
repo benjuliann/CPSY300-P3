@@ -74,20 +74,49 @@ jobs:
             IMAGE_NAME="bucketmonkey/projwebapp"
             IMAGE_TAG="${{ github.sha }}"
             CONTAINER_NAME="projwebapp"
+            CADDY_CONTAINER="caddy"
+            APP_NETWORK="web"
+            DOMAIN="project3.canadacentral.cloudapp.azure.com"
 
             sudo docker pull "${IMAGE_NAME}:${IMAGE_TAG}"
+            sudo docker pull caddy:2
+
+            sudo docker network create "${APP_NETWORK}" >/dev/null 2>&1 || true
 
             sudo docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
             sudo docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
             sudo docker run -d \
               --name "${CONTAINER_NAME}" \
+              --network "${APP_NETWORK}" \
               --label app=projwebapp \
               --env-file /etc/projwebapp/.env \
               --restart unless-stopped \
               --init \
-              -p 80:3000 \
               "${IMAGE_NAME}:${IMAGE_TAG}"
+
+            sudo mkdir -p /etc/caddy
+            sudo tee /etc/caddy/Caddyfile >/dev/null <<EOF
+            ${DOMAIN} {
+              encode gzip zstd
+              reverse_proxy ${CONTAINER_NAME}:3000
+              header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+            }
+            EOF
+
+            sudo docker stop "${CADDY_CONTAINER}" >/dev/null 2>&1 || true
+            sudo docker rm "${CADDY_CONTAINER}" >/dev/null 2>&1 || true
+
+            sudo docker run -d \
+              --name "${CADDY_CONTAINER}" \
+              --network "${APP_NETWORK}" \
+              --restart unless-stopped \
+              -p 80:80 \
+              -p 443:443 \
+              -v /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+              -v caddy_data:/data \
+              -v caddy_config:/config \
+              caddy:2
 
             status="starting"
             for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
@@ -103,6 +132,25 @@ jobs:
               exit 1
             fi
 
+            https_status="pending"
+            for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if command -v curl >/dev/null 2>&1 && curl -fsS "https://${DOMAIN}" >/dev/null; then
+                https_status="ready"
+                break
+              fi
+              if command -v wget >/dev/null 2>&1 && wget -qO- "https://${DOMAIN}" >/dev/null; then
+                https_status="ready"
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "${https_status}" != "ready" ]; then
+              sudo docker logs --tail 120 "${CADDY_CONTAINER}"
+              exit 1
+            fi
+
             sudo docker ps --filter "name=${CONTAINER_NAME}"
+            sudo docker ps --filter "name=${CADDY_CONTAINER}"
             sudo docker image prune -f
             sudo docker container prune -f
