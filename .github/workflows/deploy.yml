@@ -83,6 +83,7 @@ jobs:
             sudo docker run -d \
               --name "${CONTAINER_NAME}" \
               --label app=projwebapp \
+              --env-file /etc/projwebapp/.env \
               --restart unless-stopped \
               --init \
               -p 80:3000 \
