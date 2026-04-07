@@ -403,7 +403,7 @@ export default function Home() {
         <h1 className="text-white text-2xl font-bold tracking-tight">Nutritional Insights</h1>
       </header>
 
-      <main className="flex-1 w-full max-w-[960px] mx-auto px-8 py-8 box-border">
+      <main className="flex-1 w-full max-w-240 mx-auto px-8 py-8 box-border">
         {/* OAuth & 2FA Integration */}
         <section className="mb-8">
   <h2 className="text-xl font-bold text-slate-800 mb-4">

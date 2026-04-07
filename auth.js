@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
@@ -11,6 +12,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    }),
   ],
 
   callbacks: {
@@ -20,6 +25,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (profile) {
+        if (account?.provider === "github") {
+          token.username = profile.login;
+        }
+
         token.name = profile.name || token.name;
         token.email = profile.email || token.email;
       }
@@ -32,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.provider = token.provider;
+        session.user.username = token.username;
       }
 
       return session;
