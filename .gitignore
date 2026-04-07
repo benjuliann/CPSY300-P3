@@ -23,6 +23,13 @@
 # misc
 .DS_Store
 *.pem
+.azure/
+*.publishsettings
+*.key
+*.pfx
+*.crt
+*.cer
+.secrets/
 
 # debug
 npm-debug.log*
