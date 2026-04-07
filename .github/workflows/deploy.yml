@@ -96,13 +96,16 @@ jobs:
               "${IMAGE_NAME}:${IMAGE_TAG}"
 
             sudo mkdir -p /etc/caddy
-            sudo tee /etc/caddy/Caddyfile >/dev/null <<EOF
-            ${DOMAIN} {
-              encode gzip zstd
-              reverse_proxy ${CONTAINER_NAME}:3000
-              header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-            }
-            EOF
+            printf '%s\n' \
+              "${DOMAIN} {" \
+              "  encode gzip zstd" \
+              "  reverse_proxy ${CONTAINER_NAME}:3000" \
+              "  header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"" \
+              "}" | sudo tee /etc/caddy/Caddyfile >/dev/null
+
+            sudo docker run --rm \
+              -v /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+              caddy:2 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
             sudo docker stop "${CADDY_CONTAINER}" >/dev/null 2>&1 || true
             sudo docker rm "${CADDY_CONTAINER}" >/dev/null 2>&1 || true
