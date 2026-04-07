@@ -1,5 +1,6 @@
 "use client";
 
+import { signIn } from "next-auth/react";// signIn Function Import
 import { useState, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer,
@@ -179,6 +180,65 @@ function PiePanel({ data }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────
 export default function Home() {
+  // Security status state
+  const [securityStatus, setSecurityStatus] = useState({
+    encryption: "Loading...",
+    accessControl: "Loading...",
+    compliance: "Loading...",
+    status: "Checking...",
+    lastChecked: "",
+  });
+  const [authMessage, setAuthMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState("");
+  const [twoFAResult, setTwoFAResult] = useState("");
+  // OAuth login handler (local API route simulating OAuth flow)
+  const handleOAuthLogin = async (provider) => {
+    setAuthLoading(provider);
+    setAuthMessage("");
+
+    try {
+      const res = await fetch(`/api/auth-local/${provider}`);
+      const data = await res.json();
+      setAuthMessage(data.message);
+    } catch (error) {
+      console.error(`Failed to login with ${provider}:`, error);
+      setAuthMessage(`Failed to login with ${provider}.`);
+    } finally {
+      setAuthLoading("");
+    }
+  };
+  // // auth external API (google and github) login handler
+  // const handleOAuthLogin = async (provider) => {
+  //   try {
+  //     await signIn(provider, {
+  //       callbackUrl: "/",
+  //     });
+  //   } catch (error) {
+  //     console.error(`Failed to login with ${provider}:`, error);
+  //     setAuthMessage(`Failed to login with ${provider}.`);
+  //   }
+  // };
+  // 2fa verification handler (local API route simulating 2FA verification)
+  const handleVerify2FA = async () => {
+    setTwoFAResult("");
+
+    try {
+      const res = await fetch("/api/auth-local/verify-2fa", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: twoFACode }),
+      });
+
+      const data = await res.json();
+      setTwoFAResult(data.message);
+    } catch (error) {
+      console.error("2FA verification failed:", error);
+      setTwoFAResult("Failed to verify 2FA code.");
+    }
+  };
+  
   const [search, setSearch] = useState("");
   const [selectedDiet, setSelectedDiet] = useState("All Diet Types");
 
@@ -209,6 +269,19 @@ export default function Home() {
   const totalPages = filteredRecipes ? Math.ceil(filteredRecipes.length / ITEMS_PER_PAGE) : 1;
 
   // Reset to page 1 whenever search changes
+  useEffect(() => {
+    const fetchSecurityStatus = async () => {
+      try {
+        const res = await fetch("/api/security-status");
+        const data = await res.json();
+        setSecurityStatus(data);
+      } catch (error) {
+        console.error("Failed to load security status:", error);
+      }
+    };
+
+    fetchSecurityStatus();
+  }, []);
   useEffect(() => { setCurrentPage(1); }, [search]);
 
   useEffect(() => { loadRecipes("All Diet Types"); }, []);
@@ -386,9 +459,18 @@ export default function Home() {
           <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
             <p className="font-semibold text-slate-800 mb-2">Security Status</p>
-            <p className="text-slate-500">Encryption: <span className="text-green-600 font-medium">Enabled</span></p>
-            <p className="text-slate-500">Access Control: <span className="text-green-600 font-medium">Secure</span></p>
-            <p className="text-slate-500">Compliance: <span className="text-green-600 font-medium">GDPR Compliant</span></p>
+            <p className="text-slate-500">
+              Encryption: <span className="text-green-600 font-medium">{securityStatus.encryption}</span>
+            </p>
+            <p className="text-slate-500">
+              Access Control: <span className="text-green-600 font-medium">{securityStatus.accessControl}</span>
+            </p>
+            <p className="text-slate-500">
+              Compliance: <span className="text-green-600 font-medium">{securityStatus.compliance}</span>
+            </p>
+            <p className="text-slate-500">
+              Overall Status: <span className="text-green-600 font-medium">{securityStatus.status}</span>
+            </p>
           </div>
         </section>
 
@@ -397,22 +479,47 @@ export default function Home() {
           <h2 className="text-xl font-bold text-slate-800 mb-4">OAuth &amp; 2FA Integration</h2>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
             <p className="font-semibold text-slate-800 mb-3">Secure Login</p>
+
             <div className="flex gap-3 mb-4">
-              <button className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer transition-colors">
-                Login with Google
+              <button
+                onClick={() => handleOAuthLogin("google")}
+                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer transition-colors"
+              >
+                {authLoading === "google" ? "Connecting..." : "Login with Google"}
               </button>
-              <button className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold cursor-pointer transition-colors">
-                Login with GitHub
+
+              <button
+                onClick={() => handleOAuthLogin("github")}
+                className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold cursor-pointer transition-colors"
+              >
+                {authLoading === "github" ? "Connecting..." : "Login with GitHub"}
               </button>
             </div>
+
+            {authMessage && (
+              <p className="text-sm text-green-600 mb-4 font-medium">{authMessage}</p>
+            )}
+
             <label className="block text-xs text-slate-500 mb-1">Enter 2FA Code</label>
-            <input
-              type="text"
-              value={twoFACode}
-              onChange={e => setTwoFACode(e.target.value)}
-              placeholder="Enter your 2FA code"
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={twoFACode}
+                onChange={e => setTwoFACode(e.target.value)}
+                placeholder="Enter your 2FA code"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleVerify2FA}
+                className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold cursor-pointer transition-colors"
+              >
+                Verify
+              </button>
+            </div>
+
+            {twoFAResult && (
+              <p className="text-sm text-blue-600 mt-3 font-medium">{twoFAResult}</p>
+            )}
           </div>
         </section>
 
