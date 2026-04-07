@@ -404,77 +404,6 @@ export default function Home() {
       </header>
 
       <main className="flex-1 w-full max-w-[960px] mx-auto px-8 py-8 box-border">
-
-        {/* Explore Section */}
-        <section className="mb-9">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Explore Nutritional Insights</h2>
-          <div className="grid grid-cols-4 gap-4">
-            {CHART_CARDS.map(card => (
-              <div
-                key={card.id}
-                onClick={() => handleChartClick(card.id)}
-                className={`bg-white rounded-xl p-5 cursor-pointer flex flex-col gap-1.5 transition-all duration-200 hover:-translate-y-0.5 ${
-                  activeChart === card.id
-                    ? "ring-2 ring-blue-600 shadow-md"
-                    : "shadow-sm hover:shadow-md"
-                }`}
-              >
-                <p className="font-bold text-sm text-slate-800">{card.title}</p>
-                <p className="text-xs text-slate-500 leading-relaxed">{card.description}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart Panel */}
-          {activeChart && (
-            <div className="bg-white rounded-xl px-6 py-5 mt-4 shadow-sm">
-              <p className="text-sm font-bold text-slate-800 mb-4">{CHART_TITLES[activeChart]}</p>
-              {renderChart()}
-            </div>
-          )}
-        </section>
-
-        {/* Filters */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Filters and Data Interaction</h2>
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Search by Diet Type"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="px-3.5 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none w-52 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <select
-              value={selectedDiet}
-              onChange={e => setSelectedDiet(e.target.value)}
-              className="px-3.5 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {DIET_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-        </section>
-
-        {/* Security & Compliance */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
-            <p className="font-semibold text-slate-800 mb-2">Security Status</p>
-            <p className="text-slate-500">
-              Encryption: <span className="text-green-600 font-medium">{securityStatus.encryption}</span>
-            </p>
-            <p className="text-slate-500">
-              Access Control: <span className="text-green-600 font-medium">{securityStatus.accessControl}</span>
-            </p>
-            <p className="text-slate-500">
-              Compliance: <span className="text-green-600 font-medium">{securityStatus.compliance}</span>
-            </p>
-            <p className="text-slate-500">
-              Overall Status: <span className="text-green-600 font-medium">{securityStatus.status}</span>
-            </p>
-          </div>
-        </section>
-
         {/* OAuth & 2FA Integration */}
         <section className="mb-8">
   <h2 className="text-xl font-bold text-slate-800 mb-4">
@@ -561,6 +490,75 @@ export default function Home() {
           )}
         </div>
       </section>
+        {/* Explore Section */}
+        <section className="mb-9">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Explore Nutritional Insights</h2>
+          <div className="grid grid-cols-4 gap-4">
+            {CHART_CARDS.map(card => (
+              <div
+                key={card.id}
+                onClick={() => handleChartClick(card.id)}
+                className={`bg-white rounded-xl p-5 cursor-pointer flex flex-col gap-1.5 transition-all duration-200 hover:-translate-y-0.5 ${
+                  activeChart === card.id
+                    ? "ring-2 ring-blue-600 shadow-md"
+                    : "shadow-sm hover:shadow-md"
+                }`}
+              >
+                <p className="font-bold text-sm text-slate-800">{card.title}</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{card.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart Panel */}
+          {activeChart && (
+            <div className="bg-white rounded-xl px-6 py-5 mt-4 shadow-sm">
+              <p className="text-sm font-bold text-slate-800 mb-4">{CHART_TITLES[activeChart]}</p>
+              {renderChart()}
+            </div>
+          )}
+        </section>
+
+        {/* Filters */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Filters and Data Interaction</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Search by Diet Type"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="px-3.5 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white outline-none w-52 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <select
+              value={selectedDiet}
+              onChange={e => setSelectedDiet(e.target.value)}
+              className="px-3.5 py-2 border border-slate-300 rounded-md text-sm text-slate-700 bg-white cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {DIET_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        </section>
+
+        {/* Security & Compliance */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="font-semibold text-slate-800 mb-2">Security Status</p>
+            <p className="text-slate-500">
+              Encryption: <span className="text-green-600 font-medium">{securityStatus.encryption}</span>
+            </p>
+            <p className="text-slate-500">
+              Access Control: <span className="text-green-600 font-medium">{securityStatus.accessControl}</span>
+            </p>
+            <p className="text-slate-500">
+              Compliance: <span className="text-green-600 font-medium">{securityStatus.compliance}</span>
+            </p>
+            <p className="text-slate-500">
+              Overall Status: <span className="text-green-600 font-medium">{securityStatus.status}</span>
+            </p>
+          </div>
+        </section>
 
         {/* Cloud Resource Cleanup */}
         <section className="mb-8">
