@@ -211,17 +211,39 @@ const isFullyAuthenticated = !!session && twoFAVerified;
   //     setAuthLoading("");
   //   }
   // };
+
   // // auth external API (google and github) login handler
-  const handleOAuthLogin = async (provider) => {
-    try {
-      await signIn(provider, {
-        callbackUrl: "/",
-      });
-    } catch (error) {
-      console.error(`Failed to login with ${provider}:`, error);
-      setAuthMessage(`Failed to login with ${provider}.`);
+  // const handleOAuthLogin = async (provider) => {
+  //   try {
+  //     await signIn(provider, {
+  //       callbackUrl: "/",
+  //     });
+  //   } catch (error) {
+  //     console.error(`Failed to login with ${provider}:`, error);
+  //     setAuthMessage(`Failed to login with ${provider}.`);
+  //   }
+  // };
+  const handleOAuthLogin = (provider) => {
+  const width = 500;
+  const height = 600;
+  const left = window.screenX + (window.outerWidth - width) / 2;
+  const top = window.screenY + (window.outerHeight - height) / 2;
+
+  const popup = window.open(
+    `/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(window.location.origin + "/auth-callback")}`,
+    "oauth-popup",
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  );
+
+  // Listen for the popup to signal completion
+  const timer = setInterval(() => {
+    if (popup?.closed) {
+      clearInterval(timer);
+      // Refresh session after popup closes
+      window.location.reload();
     }
-  };
+  }, 500);
+};
   // 2fa verification handler (local API route simulating 2FA verification)
   const handleVerify2FA = async () => {
     setTwoFAResult("");
@@ -521,6 +543,25 @@ const isFullyAuthenticated = !!session && twoFAVerified;
   );
 };
 
+//blurs content until authenticated
+function GatedContent({ isAuth, children }) {
+  if (isAuth) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none">
+        <div className="opacity-30 blur-sm">{children}</div>
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+        <div className="bg-white rounded-xl px-8 py-6 shadow-lg border border-slate-200 text-center max-w-sm">
+          <p className="text-2xl mb-2">🔒</p>
+          <p className="font-bold text-slate-800 text-sm mb-1">Sign in required</p>
+          <p className="text-xs text-slate-500">Complete login and 2FA above to unlock the dashboard.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 font-sans">
 
@@ -620,6 +661,8 @@ const isFullyAuthenticated = !!session && twoFAVerified;
           )}
         </div>
       </section>
+
+      <GatedContent isAuth={isFullyAuthenticated}>
         {/* Explore Section */}
         <section className="mb-9">
           <h2 className="text-xl font-bold text-slate-800 mb-4">Explore Nutritional Insights</h2>
@@ -825,6 +868,7 @@ const isFullyAuthenticated = !!session && twoFAVerified;
             </button>
           </div>
         </section>
+      </GatedContent>
       </main>
 
       {/* Footer */}
