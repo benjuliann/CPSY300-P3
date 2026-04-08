@@ -670,38 +670,7 @@ const isFullyAuthenticated = !!session && twoFAVerified;
           </div>
         </section>
 
-        {/* Security & Compliance */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
-            <p className="font-semibold text-slate-800 mb-2">Security Status</p>
-            <p className="text-slate-500">
-              Encryption: <span className="text-green-600 font-medium">{securityStatus.encryption}</span>
-            </p>
-            <p className="text-slate-500">
-              Access Control: <span className="text-green-600 font-medium">{securityStatus.accessControl}</span>
-            </p>
-            <p className="text-slate-500">
-              Compliance: <span className="text-green-600 font-medium">{securityStatus.compliance}</span>
-            </p>
-            <p className="text-slate-500">
-              Overall Status: <span className="text-green-600 font-medium">{securityStatus.status}</span>
-            </p>
-          </div>
-        </section>
-
-        {/* Cloud Resource Cleanup */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Cloud Resource Cleanup</h2>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
-            <p className="text-blue-500 text-xs mb-3">Ensure that cloud resources are efficiently managed and cleaned up post-deployment.</p>
-            <button className="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white text-sm font-semibold cursor-pointer transition-colors">
-              Clean Up Resources
-            </button>
-          </div>
-        </section>
-
-{/* API Buttons */}
+        {/* API Buttons */}
         <section className="mb-8">
           <h2 className="text-xl font-bold text-slate-800 mb-4">API Data Interaction</h2>
           <div className="flex gap-3">
@@ -826,6 +795,36 @@ const isFullyAuthenticated = !!session && twoFAVerified;
           )}
         </section>
 
+        {/* Security & Compliance */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Security &amp; Compliance</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="font-semibold text-slate-800 mb-2">Security Status</p>
+            <p className="text-slate-500">
+              Encryption: <span className="text-green-600 font-medium">{securityStatus.encryption}</span>
+            </p>
+            <p className="text-slate-500">
+              Access Control: <span className="text-green-600 font-medium">{securityStatus.accessControl}</span>
+            </p>
+            <p className="text-slate-500">
+              Compliance: <span className="text-green-600 font-medium">{securityStatus.compliance}</span>
+            </p>
+            <p className="text-slate-500">
+              Overall Status: <span className="text-green-600 font-medium">{securityStatus.status}</span>
+            </p>
+          </div>
+        </section>
+
+        {/* Cloud Resource Cleanup */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Cloud Resource Cleanup</h2>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-sm">
+            <p className="text-blue-500 text-xs mb-3">Ensure that cloud resources are efficiently managed and cleaned up post-deployment.</p>
+            <button className="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white text-sm font-semibold cursor-pointer transition-colors">
+              Clean Up Resources
+            </button>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
