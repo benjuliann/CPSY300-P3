@@ -1,4 +1,5 @@
 import loadCSV from "@/lib/loadCSV";
+import { auth } from "@/auth";
 
 function assignCluster(recipe) {
   const protein = parseFloat(recipe["Protein(g)"]) || 0;
@@ -11,6 +12,18 @@ function assignCluster(recipe) {
 }
 
 export async function GET(request) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized", code: 401 }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const data = await loadCSV();
 
@@ -18,31 +31,34 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get("limit")) || 200;
     const diet = searchParams.get("diet");
 
-    let filtered = diet && diet.toLowerCase() !== "all"
-      ? data.filter(r => r["Diet_type"]?.toLowerCase() === diet.toLowerCase())
-      : data;
+    let filtered =
+      diet && diet.toLowerCase() !== "all"
+        ? data.filter((r) => r["Diet_type"]?.toLowerCase() === diet.toLowerCase())
+        : data;
 
     const sliced = filtered.slice(0, limit);
 
-    const clusters = sliced.map(row => ({
+    const clusters = sliced.map((row) => ({
       diet: row.Diet_type.toLowerCase(),
       recipe: row.Recipe_name,
       protein: parseFloat(row["Protein(g)"]) || 0,
       carbs: parseFloat(row["Carbs(g)"]) || 0,
       fat: parseFloat(row["Fat(g)"]) || 0,
-      cluster: assignCluster(row)
+      cluster: assignCluster(row),
     }));
 
     return new Response(JSON.stringify(clusters), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
-
   } catch (err) {
     console.error("API error:", err);
-    return new Response(JSON.stringify({ error: "Failed to load recipes" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({ error: "Failed to load recipes", code: 500 }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

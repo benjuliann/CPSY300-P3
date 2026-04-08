@@ -255,17 +255,17 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Client-side search filter applied on top of allRecipes
-  const filteredRecipes = allRecipes
-    ? allRecipes.filter(r => {
-        if (!search.trim()) return true;
-        const q = search.toLowerCase();
-        return (
-          r.Recipe_name?.toLowerCase().includes(q) ||
-          r.Diet_type?.toLowerCase().includes(q) ||
-          r.Cuisine_type?.toLowerCase().includes(q)
-        );
-      })
-    : null;
+  const filteredRecipes = Array.isArray(allRecipes)
+  ? allRecipes.filter(r => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        r.Recipe_name?.toLowerCase().includes(q) ||
+        r.Diet_type?.toLowerCase().includes(q) ||
+        r.Cuisine_type?.toLowerCase().includes(q)
+      );
+    })
+  : null;
 
   const totalPages = filteredRecipes ? Math.ceil(filteredRecipes.length / ITEMS_PER_PAGE) : 1;
 
@@ -388,11 +388,28 @@ export default function Home() {
 
   const renderChart = () => {
     if (chartLoading) return <Spinner />;
-    if (activeChart === "bar"     && insightsData) return <BarPanel data={insightsData} />;
-    if (activeChart === "scatter" && clustersData) return <ScatterPanel data={clustersData} />;
-    if (activeChart === "heatmap" && insightsData) return <HeatmapPanel data={insightsData} />;
-    if (activeChart === "pie"     && insightsData) return <PiePanel data={insightsData} />;
-    return null;
+
+    if (activeChart === "bar" && Array.isArray(insightsData)) {
+      return <BarPanel data={insightsData} />;
+    }
+
+    if (activeChart === "scatter" && Array.isArray(clustersData)) {
+      return <ScatterPanel data={clustersData} />;
+    }
+
+    if (activeChart === "heatmap" && Array.isArray(insightsData)) {
+      return <HeatmapPanel data={insightsData} />;
+    }
+
+    if (activeChart === "pie" && Array.isArray(insightsData)) {
+      return <PiePanel data={insightsData} />;
+    }
+
+    return (
+      <div className="text-sm text-slate-500">
+        Sign in to view chart data.
+      </div>
+    );
   };
 
   return (
