@@ -189,10 +189,13 @@ export default function Home() {
     lastChecked: "",
   });
   const [authMessage, setAuthMessage] = useState("");
-  const [authLoading, setAuthLoading] = useState("");
-  const [twoFAResult, setTwoFAResult] = useState("");
-  // OAuth login handler (local API route simulating OAuth flow)
-  const { data: session, status } = useSession();
+const [authLoading, setAuthLoading] = useState("");
+const [twoFAResult, setTwoFAResult] = useState("");
+const [twoFAVerified, setTwoFAVerified] = useState(false);
+
+const { data: session, status } = useSession();
+
+const isFullyAuthenticated = !!session && twoFAVerified;
   // const handleOAuthLogin = async (provider) => {
   //   setAuthLoading(provider);
   //   setAuthMessage("");
@@ -234,9 +237,18 @@ export default function Home() {
 
       const data = await res.json();
       setTwoFAResult(data.message);
+
+      if (res.ok) {
+        setTwoFAVerified(true);
+        sessionStorage.setItem("twoFA_verified", "true");
+      } else {
+        setTwoFAVerified(false);
+        sessionStorage.removeItem("twoFA_verified");
+      }
     } catch (error) {
       console.error("2FA verification failed:", error);
       setTwoFAResult("Failed to verify 2FA code.");
+      setTwoFAVerified(false);
     }
   };
   
@@ -256,7 +268,7 @@ export default function Home() {
 
   // Client-side search filter applied on top of allRecipes
   const filteredRecipes = Array.isArray(allRecipes)
-  ? allRecipes.filter(r => {
+  ? allRecipes.filter((r) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -268,6 +280,25 @@ export default function Home() {
   : null;
 
   const totalPages = filteredRecipes ? Math.ceil(filteredRecipes.length / ITEMS_PER_PAGE) : 1;
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("twoFA_verified");
+    if (session && saved === "true") {
+      setTwoFAVerified(true);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) {
+      setTwoFAVerified(false);
+      sessionStorage.removeItem("twoFA_verified");
+      setAllRecipes(null);
+      setApiResults(null);
+      setInsightsData(null);
+      setClustersData(null);
+      setActiveChart(null);
+    }
+  }, [session]);
 
   // Reset to page 1 whenever search changes
   useEffect(() => {
@@ -285,67 +316,145 @@ export default function Home() {
   }, []);
   useEffect(() => { setCurrentPage(1); }, [search]);
 
-  useEffect(() => { loadRecipes("All Diet Types"); }, []);
+  useEffect(() => {
+  if (isFullyAuthenticated) {
+    loadRecipes("All Diet Types");
+  } else {
+    setAllRecipes(null);
+    setApiResults(null);
+    setInsightsData(null);
+    setClustersData(null);
+    setActiveChart(null);
+  }
+}, [isFullyAuthenticated]);
 
   useEffect(() => {
-    loadRecipes(selectedDiet);
-    if (activeChart) refreshChartData(activeChart, selectedDiet);
-  }, [selectedDiet]);
+  if (!isFullyAuthenticated) return;
+
+  loadRecipes(selectedDiet);
+  if (activeChart) refreshChartData(activeChart, selectedDiet);
+}, [selectedDiet, isFullyAuthenticated]);
 
   const dietParam = (diet) => diet !== "All Diet Types" ? diet.toLowerCase() : "all";
 
   const loadRecipes = async (diet) => {
-    setCurrentPage(1);
-    try {
-      const res = await fetch(`/api/recipes?diet=${dietParam(diet)}`);
-      const data = await res.json();
-      setAllRecipes(data);
-      setApiResults(prev =>
-        prev?.endpoint === "recipes"
-          ? { endpoint: "recipes", data: data.slice(0, ITEMS_PER_PAGE) }
-          : prev
-      );
-    } catch (e) { console.error(e); }
-  };
+  setCurrentPage(1);
+
+  try {
+    const res = await fetch(`/api/recipes?diet=${dietParam(diet)}`);
+    const data = await res.json();
+
+    if (!res.ok || !Array.isArray(data)) {
+      setAllRecipes(null);
+      setApiResults({
+        endpoint: "recipes",
+        error: "Sign in and complete 2FA to view recipes.",
+      });
+      return;
+    }
+
+    setAllRecipes(data);
+    setApiResults((prev) =>
+      prev?.endpoint === "recipes"
+        ? { endpoint: "recipes", data: data.slice(0, ITEMS_PER_PAGE) }
+        : prev
+    );
+  } catch (e) {
+    console.error(e);
+    setAllRecipes(null);
+  }
+};
 
   const refreshChartData = async (chartId, diet) => {
-    setChartLoading(true);
-    try {
-      if (chartId === "scatter") {
-        const res = await fetch(`/api/clusters?limit=200&diet=${dietParam(diet)}`);
-        setClustersData(await res.json());
-      } else {
-        const res = await fetch(`/api/insights`);
-        setInsightsData(await res.json());
+  setChartLoading(true);
+
+  try {
+    if (chartId === "scatter") {
+      const res = await fetch(`/api/clusters?limit=200&diet=${dietParam(diet)}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setClustersData(null);
+        return;
       }
-    } catch (e) { console.error(e); }
-    finally { setChartLoading(false); }
-  };
+
+      setClustersData(data);
+    } else {
+      const res = await fetch(`/api/insights`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setInsightsData(null);
+        return;
+      }
+
+      setInsightsData(data);
+    }
+  } catch (e) {
+    console.error(e);
+    setInsightsData(null);
+    setClustersData(null);
+  } finally {
+    setChartLoading(false);
+  }
+};
 
   const handleChartClick = async (id) => {
-    if (activeChart === id) { setActiveChart(null); return; }
-    setActiveChart(id);
-    const param = dietParam(selectedDiet);
-    if (id === "scatter") {
-      if (!clustersData) {
-        setChartLoading(true);
-        try {
-          const res = await fetch(`/api/clusters?limit=200&diet=${param}`);
-          setClustersData(await res.json());
-        } catch (e) { console.error(e); }
-        finally { setChartLoading(false); }
-      }
-    } else {
-      if (!insightsData) {
-        setChartLoading(true);
-        try {
-          const res = await fetch(`/api/insights`);
-          setInsightsData(await res.json());
-        } catch (e) { console.error(e); }
-        finally { setChartLoading(false); }
+  if (!isFullyAuthenticated) {
+    setActiveChart(null);
+    return;
+  }
+
+  if (activeChart === id) {
+    setActiveChart(null);
+    return;
+  }
+
+  setActiveChart(id);
+  const param = dietParam(selectedDiet);
+
+  if (id === "scatter") {
+    if (!clustersData) {
+      setChartLoading(true);
+      try {
+        const res = await fetch(`/api/clusters?limit=200&diet=${param}`);
+        const data = await res.json();
+
+        if (!res.ok || !Array.isArray(data)) {
+          setClustersData(null);
+          return;
+        }
+
+        setClustersData(data);
+      } catch (e) {
+        console.error(e);
+        setClustersData(null);
+      } finally {
+        setChartLoading(false);
       }
     }
-  };
+  } else {
+    if (!insightsData) {
+      setChartLoading(true);
+      try {
+        const res = await fetch(`/api/insights`);
+        const data = await res.json();
+
+        if (!res.ok || !Array.isArray(data)) {
+          setInsightsData(null);
+          return;
+        }
+
+        setInsightsData(data);
+      } catch (e) {
+        console.error(e);
+        setInsightsData(null);
+      } finally {
+        setChartLoading(false);
+      }
+    }
+  }
+};
 
   const fetchData = async (endpoint) => {
     setLoading(endpoint);
@@ -387,30 +496,30 @@ export default function Home() {
   };
 
   const renderChart = () => {
-    if (chartLoading) return <Spinner />;
+  if (chartLoading) return <Spinner />;
 
-    if (activeChart === "bar" && Array.isArray(insightsData)) {
-      return <BarPanel data={insightsData} />;
-    }
+  if (activeChart === "bar" && Array.isArray(insightsData)) {
+    return <BarPanel data={insightsData} />;
+  }
 
-    if (activeChart === "scatter" && Array.isArray(clustersData)) {
-      return <ScatterPanel data={clustersData} />;
-    }
+  if (activeChart === "scatter" && Array.isArray(clustersData)) {
+    return <ScatterPanel data={clustersData} />;
+  }
 
-    if (activeChart === "heatmap" && Array.isArray(insightsData)) {
-      return <HeatmapPanel data={insightsData} />;
-    }
+  if (activeChart === "heatmap" && Array.isArray(insightsData)) {
+    return <HeatmapPanel data={insightsData} />;
+  }
 
-    if (activeChart === "pie" && Array.isArray(insightsData)) {
-      return <PiePanel data={insightsData} />;
-    }
+  if (activeChart === "pie" && Array.isArray(insightsData)) {
+    return <PiePanel data={insightsData} />;
+  }
 
-    return (
-      <div className="text-sm text-slate-500">
-        Sign in to view chart data.
-      </div>
-    );
-  };
+  return (
+    <div className="text-sm text-slate-500">
+      Sign in and complete 2FA to view chart data.
+    </div>
+  );
+};
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 font-sans">
@@ -446,7 +555,11 @@ export default function Home() {
               </p>
 
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={async () => {
+                  setTwoFAVerified(false);
+                  sessionStorage.removeItem("twoFA_verified");
+                  await signOut({ callbackUrl: "/" });
+                }}
                 className="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white text-sm font-semibold"
               >
                 Logout
@@ -480,7 +593,7 @@ export default function Home() {
 
           {/* 2FA SECTION (leave as-is for now) */}
           <label className="block text-xs text-slate-500 mb-1">
-            Enter 2FA Code
+            Enter 2FA Code Use 123456
           </label>
 
           <div className="flex gap-3">
